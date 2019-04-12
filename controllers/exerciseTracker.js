@@ -9,7 +9,7 @@ exports.getData = async (req, res, next) => {
       year: currentYear,
       month: currentMonth,
       user: userId
-    })
+    }).populate('exerciseData');
     res.json({data: userData})
   } catch (error) {
     console.log(error);

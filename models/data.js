@@ -19,9 +19,10 @@ const dataSchema = new Schema({
     ref: 'User',
     required: true
   },
-  time: {
-    type: String
-  }
+  exercises: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Exercise'
+  }]
 })
 
 module.exports = mongoose.model('Data', dataSchema);
