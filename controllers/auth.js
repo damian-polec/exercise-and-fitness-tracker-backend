@@ -30,23 +30,23 @@ exports.createUser = async ( req, res, next ) => {
       email: email,
       password: hashedPassword
     })
-    const year = new Date().getFullYear();
-    const month = new Date().getMonth();
-    const dayCounts = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    const dataObjects = [];
-    let i = 0;
-    while(i < dayCounts) {
-      const data = new Data({
-        year: year,
-        month: month,
-        day: i + 1,
-        user: user
-      })
-      dataObjects.push(data);
-      user.exerciseData.push(data);
-      i++
-    }
-    await Data.insertMany(dataObjects);
+    // const year = new Date().getFullYear();
+    // const month = new Date().getMonth();
+    // const dayCounts = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    // const dataObjects = [];
+    // let i = 0;
+    // while(i < dayCounts) {
+    //   const data = new Data({
+    //     year: year,
+    //     month: month,
+    //     day: i + 1,
+    //     user: user
+    //   })
+    //   dataObjects.push(data);
+    //   user.exerciseData.push(data);
+    //   i++
+    // }
+    // await Data.insertMany(dataObjects);
     await user.save();
     res.status(201).json({ message: 'User creation success', userId: user._id})
   } catch(error) {
