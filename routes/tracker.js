@@ -7,6 +7,14 @@ const router = express.Router();
 
 router.get('/getData', isAuth, trackerController.getData);
 
+router.post('/addGoal', isAuth, trackerController.addGoal);
+
+router.post('/getGoals', isAuth, trackerController.getGoals);
+
+router.post('/addQuote', isAuth, trackerController.addQuote);
+
+router.post('/getQuote', isAuth, trackerController.getQuote);
+
 router.post('/addNote', isAuth, trackerController.addNote);
 
 router.get('/getNoteData/:noteId', isAuth, trackerController.getNote);
