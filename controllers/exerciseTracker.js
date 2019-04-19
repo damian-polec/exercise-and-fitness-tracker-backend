@@ -1,3 +1,5 @@
+const admin = require('firebase-admin');
+const uuidv4 = require('uuid/v4');
 const Data = require('../models/data');
 const Exercise = require('../models/exercise');
 const User = require('../models/user');
@@ -98,7 +100,6 @@ exports.addGoal = async( req, res, next ) => {
 exports.getQuote = async ( req, res, next ) => {
   try {
     const quote = await Motivation.findOne({ user: req.userId, month: req.body.month });
-    console.log(quote);
     if(!quote) {
       res.status(404).json({quote: 'Your Motivational Quote of the Month'})
     }
@@ -133,6 +134,30 @@ exports.addQuote = async ( req, res, next ) => {
   } catch(error) {
     next(error);
   }
+}
+
+exports.addReward = async ( req, res, next ) => {
+  const bucket = admin.storage().bucket('gs://exercise-tracker-3b93d.appspot.com');
+  if(!req.file) {
+    const error = new Error('No image provided.');
+    error.statusCode = 422;
+    throw error;
+  }
+  const image = req.file;
+  image.path.replace("\\" ,"/")
+  const uuid = uuidv4();
+  const test = await bucket.upload(`images/${image.filename}`, {
+    uploadType: 'media',
+    metdata: {
+      metadata: {
+        firebaseStorageDonwloadTokens: uuid
+      }
+    }
+  });
+  const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(test[0].name)}?alt=media&token=${uuid}`;
+  
+
+  res.json(url);
 }
 //Note Controller functions
 exports.getNote = async ( req, res, next ) => {

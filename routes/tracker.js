@@ -17,6 +17,8 @@ router.post('/getQuote', isAuth, trackerController.getQuote);
 
 router.post('/addNote', isAuth, trackerController.addNote);
 
+router.post('/addReward', trackerController.addReward);
+
 router.get('/getNoteData/:noteId', isAuth, trackerController.getNote);
 
 module.exports = router;
