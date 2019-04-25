@@ -5,19 +5,25 @@ const Exercise = require('../models/exercise');
 const User = require('../models/user');
 const Goal = require('../models/goal');
 const Motivation = require('../models/motivation');
+const Reward = require('../models/reward');
 
 
 exports.getData = async (req, res, next) => {
   try {
     const userId = req.userId;
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth();
+    const currentYear = new Date(new Date().getFullYear(), req.body.month, 1).getFullYear();
+    const currentMonth = new Date(new Date().getFullYear(), req.body.month, 1).getMonth();
+    console.log(req.body.month);
+    console.log(currentMonth);
+    console.log(currentYear)
     const user = await User.findOne({_id: userId});
     let userData = await Data.find({
       year: currentYear,
       month: currentMonth,
       user: userId
-    }).populate('exerciseData');
+    })
+    .populate('exerciseData')
+    .sort({day: 1});
     if(userData.length > 0) {
       res.json({data: userData})
     } else {
@@ -102,8 +108,9 @@ exports.getQuote = async ( req, res, next ) => {
     const quote = await Motivation.findOne({ user: req.userId, month: req.body.month });
     if(!quote) {
       res.status(404).json({quote: 'Your Motivational Quote of the Month'})
+    } else {
+      res.status(200).json(quote);
     }
-    res.status(200).json(quote);
   } catch(err) {
     next(err);
   }
@@ -135,29 +142,75 @@ exports.addQuote = async ( req, res, next ) => {
     next(error);
   }
 }
-
+//Reward Controller functions
 exports.addReward = async ( req, res, next ) => {
-  const bucket = admin.storage().bucket('gs://exercise-tracker-3b93d.appspot.com');
-  if(!req.file) {
-    const error = new Error('No image provided.');
-    error.statusCode = 422;
-    throw error;
-  }
-  const image = req.file;
-  image.path.replace("\\" ,"/")
-  const uuid = uuidv4();
-  const test = await bucket.upload(`images/${image.filename}`, {
-    uploadType: 'media',
-    metdata: {
-      metadata: {
-        firebaseStorageDonwloadTokens: uuid
-      }
+  try {
+    const user = await User.findById({_id: req.userId});
+    if(!user) {
+      const error = new Error('User Not Found');
+      throw error;
     }
-  });
-  const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(test[0].name)}?alt=media&token=${uuid}`;
-  
+    const bucket = admin.storage().bucket('gs://exercise-tracker-3b93d.appspot.com');
+    if(!req.file) {
+      const error = new Error('No image provided.');
+      error.statusCode = 422;
+      throw error;
+    }
+    const month = req.body.month;
+    const image = req.file;
+    image.path.replace("\\" ,"/")
+    const uuid = uuidv4();
+    const isReward = await Reward.findOne({user: req.userId, month: month});
+    if(isReward) {
+      await bucket.file(isReward.fileName).delete();
+      const firebaseImageUpload = await bucket.upload(`images/${image.filename}`, {
+        uploadType: 'media',
+        metdata: {
+          metadata: {
+            firebaseStorageDonwloadTokens: uuid
+          }
+        }
+      });   
+      const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(firebaseImageUpload[0].name)}?alt=media&token=${uuid}`;
+      isReward.fileUrl = url;
+      isReward.fileName = firebaseImageUpload[0].name
+      await isReward.save();
+      res.json({message: 'Editing success', rewardData: {fileUrl: isReward.fileUrl, fileName: isReward.fileName}});
+    } else {
+      const firebaseImageUpload = await bucket.upload(`images/${image.filename}`, {
+        uploadType: 'media',
+        metdata: {
+          metadata: {
+            firebaseStorageDonwloadTokens: uuid
+          }
+        }
+      });   
+      const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(firebaseImageUpload[0].name)}?alt=media&token=${uuid}`;
+      const reward = new Reward({
+        fileUrl: url,
+        fileName: firebaseImageUpload[0].name,
+        month: month,
+        user: user
+      })
+      await reward.save();
+      res.json({message: 'Creation Success', rewardData: {fileUrl: reward.fileUrl, fileName: reward.fileName}});
+    }
+  } catch(error) {
+    next(error);
+  }
+}
 
-  res.json(url);
+exports.getReward = async ( req, res ,next ) => {
+  try {
+    const reward = await Reward.findOne({ user: req.userId, month: req.body.month });
+    if(!reward) {
+      res.status(404).json({reward: 'No Reward Set'})
+    } else {
+      res.status(200).json({fileUrl: reward.fileUrl, fileName: reward.fileName});
+    }
+  } catch(err) {
+    next(err);
+  }
 }
 //Note Controller functions
 exports.getNote = async ( req, res, next ) => {
@@ -186,6 +239,7 @@ exports.addNote = async (req, res, next) => {
         return exercise.time = noteUpdatedData[i].time
       });
       exercises.map( async (exercise) => await exercise.save());
+      res.json({message: 'Note edited', data: exercises})
     }
 
     if(noteNewData.length > 0) {
@@ -201,9 +255,9 @@ exports.addNote = async (req, res, next) => {
       const day = await Data.findOne({ _id: dayId });
       day.exercises = day.exercises.concat(exercises);
       await day.save();
+      res.json({message: 'Note added', data: day.exercises});
     }
 
-    res.json({message: 'Note added'});
   } catch(err) {
     res.json(err);
   }

@@ -5,7 +5,7 @@ const isAuth = require('../middleware/is-auth');
 
 const router = express.Router();
 
-router.get('/getData', isAuth, trackerController.getData);
+router.post('/getData', isAuth, trackerController.getData);
 
 router.post('/addGoal', isAuth, trackerController.addGoal);
 
@@ -17,7 +17,9 @@ router.post('/getQuote', isAuth, trackerController.getQuote);
 
 router.post('/addNote', isAuth, trackerController.addNote);
 
-router.post('/addReward', trackerController.addReward);
+router.post('/addReward', isAuth, trackerController.addReward);
+
+router.post('/getReward', isAuth, trackerController.getReward);
 
 router.get('/getNoteData/:noteId', isAuth, trackerController.getNote);
 
