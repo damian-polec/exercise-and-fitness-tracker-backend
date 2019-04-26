@@ -7,6 +7,7 @@ const uuidv4 = require('uuid/v4');
 const authRoutes = require('./routes/auth');
 const trackerRoutes = require('./routes/tracker');
 const admin = require('firebase-admin');
+const helmet = require('helmet');
 const SERVICE_ACCOUNT = {
   "type": process.env.SERVICE_TYPE,
   "project_id": process.env.PROJECT_ID,
@@ -54,7 +55,7 @@ app.use((req, res, next) => {
   }
   next();
 })
-
+app.use(helmet());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(multer({storage: fileStorage, fileFilter: fileFilter}).single('image'));

@@ -13,9 +13,6 @@ exports.getData = async (req, res, next) => {
     const userId = req.userId;
     const currentYear = new Date(new Date().getFullYear(), req.body.month, 1).getFullYear();
     const currentMonth = new Date(new Date().getFullYear(), req.body.month, 1).getMonth();
-    console.log(req.body.month);
-    console.log(currentMonth);
-    console.log(currentYear)
     const user = await User.findOne({_id: userId});
     let userData = await Data.find({
       year: currentYear,
@@ -54,7 +51,7 @@ exports.getData = async (req, res, next) => {
     }
 
   } catch (error) {
-    console.log(error);
+    next(error);
   }
 }
 
@@ -107,7 +104,7 @@ exports.getQuote = async ( req, res, next ) => {
   try {
     const quote = await Motivation.findOne({ user: req.userId, month: req.body.month });
     if(!quote) {
-      res.status(404).json({quote: 'Your Motivational Quote of the Month'})
+      res.json({quote: 'Your Motivational Quote of the Month'})
     } else {
       res.status(200).json(quote);
     }
@@ -150,7 +147,7 @@ exports.addReward = async ( req, res, next ) => {
       const error = new Error('User Not Found');
       throw error;
     }
-    const bucket = admin.storage().bucket('gs://exercise-tracker-3b93d.appspot.com');
+    const bucket = admin.storage().bucket(process.env.FIREBASE_BUCKET);
     if(!req.file) {
       const error = new Error('No image provided.');
       error.statusCode = 422;
@@ -204,7 +201,7 @@ exports.getReward = async ( req, res ,next ) => {
   try {
     const reward = await Reward.findOne({ user: req.userId, month: req.body.month });
     if(!reward) {
-      res.status(404).json({reward: 'No Reward Set'})
+      res.json({reward: 'No Reward Set'})
     } else {
       res.status(200).json({fileUrl: reward.fileUrl, fileName: reward.fileName});
     }
